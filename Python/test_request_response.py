@@ -52,4 +52,16 @@ def test_request_property_search():
     assert "Property Search" in response.page.title
     assert "Child1" in response.page.text
     assert not "Child2" in response.page.text
-   
+
+def test_search_replace():
+    root_page = WikiPage(title="FrontPage", uri="/")
+    child_page = WikiPage(title="Child1", text="a child page with text baz")
+    root_page.add_child(child_page)
+    myapp = WikiApp(root_page)
+    request = Request(request_type="POST", uri="/", data={"search_text": "baz", "replace": "foo"})
+    response = myapp.handle_request(request)
+    assert "Search/Replace" in response.page.title
+    assert "Child1" in response.page.text
+    child_page_response = myapp.handle_request(Request(request_type="GET", uri="/Child1"))
+    assert "foo" in child_page_response.page.text
+    assert not "baz" in child_page_response.page.text
