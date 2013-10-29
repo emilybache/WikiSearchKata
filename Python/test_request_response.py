@@ -39,4 +39,16 @@ def test_request_where_used():
     response = myapp.handle_request(request)
     assert "Where Used" in response.page.title
     assert "Child1" in response.page.text
+    
+def test_request_property_search():
+    root_page = WikiPage(title="FrontPage", uri="/")
+    child_page = WikiPage(title="Child1", text="a child page", tags={"foo", "bar"})
+    child2_page = WikiPage(title="Child2", text="a second child page", tags={"foo"})
+    root_page.add_child(child_page)
+    root_page.add_child(child2_page)
+    myapp = WikiApp(root_page)
+    request = Request(request_type="POST", uri="/", data={"tags": {"bar"}})
+    response = myapp.handle_request(request)
+    assert "Property Search" in response.page.title
+    assert "Child1" in response.page.text
    

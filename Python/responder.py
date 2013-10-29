@@ -4,6 +4,7 @@ from wiki import WikiPage
 from traverse import DepthFirstTraverser
 
 
+
 def responder_for(request):
     if request.request_type == "GET":
         return WikiPageResponder()
@@ -12,6 +13,8 @@ def responder_for(request):
             return SearchResponder()
         if request.data.get("where_used"):
             return WhereUsedResponder()
+        if request.data.get("tags"):
+            return PropertySearchResponder()
         
 class WikiPageResponder:
     def make_response(self, request, context):
@@ -42,6 +45,17 @@ class WhereUsedResponder:
         results_page = WikiPage("Where Used: " + search_for_page)
         matching_pages = (page for page in DepthFirstTraverser(context.root_page).traverse() if search_for_page in page.text)
         results_page.text = "found term in pages:<ul>"
+        for result_page in matching_pages:
+            results_page.text += '<li>'+ result_page.title + '</li>'
+        results_page.text += "</ul>"
+        return Response(page=results_page)
+
+class PropertySearchResponder:
+    def make_response(self, request, context):
+        search_for_tags = request.data["tags"]
+        results_page = WikiPage("Property Search: " + str(search_for_tags))
+        matching_pages = (page for page in DepthFirstTraverser(context.root_page).traverse() if set.intersection(search_for_tags, page.tags))
+        results_page.text = "found property in pages:<ul>"
         for result_page in matching_pages:
             results_page.text += '<li>'+ result_page.title + '</li>'
         results_page.text += "</ul>"
