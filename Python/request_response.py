@@ -12,6 +12,5 @@ class Response:
         self.page = page
         
 class RequestContext:
-    def __init__(self, root_page, all_pages):
+    def __init__(self, root_page):
         self.root_page = root_page
-        self.all_pages = all_pages
