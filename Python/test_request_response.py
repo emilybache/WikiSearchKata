@@ -51,4 +51,5 @@ def test_request_property_search():
     response = myapp.handle_request(request)
     assert "Property Search" in response.page.title
     assert "Child1" in response.page.text
+    assert not "Child2" in response.page.text
    

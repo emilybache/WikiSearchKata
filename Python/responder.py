@@ -25,39 +25,55 @@ class WikiPageResponder:
             return Response(http_code="200", page = page)
         else:
             return Response(http_code="404", page=WikiPage("404"))
+ 
+ 
+class ResultResponder:
+    def make_response(self, request, context):
+        self.request = request
+        self.context = context
+        results_page = WikiPage(self.title())
+        matching_pages = (page for page in DepthFirstTraverser(context.root_page).traverse() if self.match(page))
+        results_page.text = "found term in pages:<ul>"
+        for result_page in matching_pages:
+            results_page.text += '<li>'+ result_page.title + '</li>'
+        results_page.text += "</ul>"
+        return Response(page=results_page)
         
+    def title(self):
+        pass # must be overridden in subclass
     
-class SearchResponder:
-    def make_response(self, request, context):
-        search_term = request.data["search_text"]
-        results_page = WikiPage("Search Results")
-        matching_pages = (page for page in DepthFirstTraverser(context.root_page).traverse() if search_term in page.text)
-        results_page.text = "found term in pages:<ul>"
-        for result_page in matching_pages:
-            results_page.text += '<li>'+ result_page.title + '</li>'
-        results_page.text += "</ul>"
-        return Response(page=results_page)
+    def match(self, page):
+        pass # must be overridden in subclass
+           
+    
+class SearchResponder(ResultResponder):
+    def title(self):
+        return "Search Results"
+    
+    def match(self, page):
+        search_term = self.request.data["search_text"]
+        return search_term in page.text
 
 
-class WhereUsedResponder:
-    def make_response(self, request, context):
-        search_for_page = request.data["where_used"]
-        results_page = WikiPage("Where Used: " + search_for_page)
-        matching_pages = (page for page in DepthFirstTraverser(context.root_page).traverse() if search_for_page in page.text)
-        results_page.text = "found term in pages:<ul>"
-        for result_page in matching_pages:
-            results_page.text += '<li>'+ result_page.title + '</li>'
-        results_page.text += "</ul>"
-        return Response(page=results_page)
-
-class PropertySearchResponder:
-    def make_response(self, request, context):
-        search_for_tags = request.data["tags"]
-        results_page = WikiPage("Property Search: " + str(search_for_tags))
-        matching_pages = (page for page in DepthFirstTraverser(context.root_page).traverse() if set.intersection(search_for_tags, page.tags))
-        results_page.text = "found property in pages:<ul>"
-        for result_page in matching_pages:
-            results_page.text += '<li>'+ result_page.title + '</li>'
-        results_page.text += "</ul>"
-        return Response(page=results_page)
+class WhereUsedResponder(ResultResponder):
+    def title(self):
+        return "Where Used: " + self.search_for_page
+    
+    def match(self, page):
+        return self.search_for_page in page.text
         
+    @property
+    def search_for_page(self):
+        return self.request.data["where_used"]
+        
+
+class PropertySearchResponder(ResultResponder):
+    def title(self):
+        return "Property Search: " + str(self.search_for_tags)
+    
+    def match(self, page):
+        return set.intersection(self.search_for_tags, page.tags)
+        
+    @property
+    def search_for_tags(self):
+        return self.request.data["tags"]
